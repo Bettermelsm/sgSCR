@@ -33,6 +33,9 @@ sgs_manifest_init <- function(manifest_path, run_id, random_seed, species,
     convention_version = CONVENTION_VERSION
   )
   .sgs_manifest_write(manifest_path, m)
+  # P12-a D6：写 .run_id 同级标记，供 run_step.sh 校验 config.run_id 与输出目录一致
+  # （run1 误写事故固化：变量展开错目录时立即拒绝，而非静默写入错误 run）
+  writeLines(run_id, file.path(dirname(manifest_path), ".run_id"))
   invisible(m)
 }
 

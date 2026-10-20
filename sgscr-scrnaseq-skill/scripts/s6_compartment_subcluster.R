@@ -17,7 +17,8 @@ if (is.na(config_path)) stop("Usage: Rscript s6_compartment_subcluster.R --confi
 HERE <- dirname(normalizePath(sub("^--file=", "",
   grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)[1])))
 for (f in c("log_utils.R", "config_loader.R", "manifest_utils.R", "save_plot.R",
-            "qc_gate_utils.R", "resume_utils.R", "preflight_utils.R")) {
+            "qc_gate_utils.R", "resume_utils.R", "preflight_utils.R",
+            "subcluster_filter_utils.R")) {
   source(file.path(HERE, "common", f))
 }
 
@@ -65,6 +66,10 @@ for (comp in targets) {
   sub <- Seurat::FindNeighbors(sub, dims = 1:npcs_use, verbose = FALSE)
   sub <- Seurat::FindClusters(sub, resolution = res_sub, verbose = FALSE)
   sub <- Seurat::RunUMAP(sub, dims = 1:npcs_use, verbose = FALSE)
+
+  # P12-a D5：删除继承自父对象的 *_snn_res.* 扫描列，只保留本分辨率的亚群列
+  # （防消费方 grep 首列误取——P11C 实测坑）
+  sub <- sgs_drop_inherited_snn_cols(sub, sprintf("RNA_snn_res.%g", res_sub))
 
   # P6_<compartment>_UMAP（需求产物命名约定）
   umap_df <- as.data.frame(Embeddings(sub, "umap"))

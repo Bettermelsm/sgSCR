@@ -27,6 +27,9 @@ samples:
       reason: "<TBD, 用户确认剔除依据>"
 
 remote:
+  mode: "local"                          # P12-a A2：local=单机模式（run_step.sh 本机直接执行，
+                                         # remote_exec.sh sync 无操作、exec/fetch 本机直做）；
+                                         # ssh=远程模式（remote_exec.sh sync/exec/fetch 走 ssh+frp 兜底）
   host_alias: "<TBD, 用户确认，ssh config 中的 Host 别名>"
   ssh_target: "<TBD, 用户确认，如 <user>@<host> 或 ssh config 中的 Host 别名>"
   frp_fallback:
@@ -49,6 +52,12 @@ qc:                                      # 需求6.2：QC阈值可配置
   max_percent_mt: <TBD, 用户确认>
   max_percent_hb: <TBD, 用户确认>
   min_cells_pass_gate: <TBD, 用户确认>   # S2 Quality_Gate 下限
+  # mt_pattern: "^MT-"                   # P12-a A3：线粒体基因前缀正则；缺省时按 organism
+                                         # 自动选（human="^MT-", mouse="^mt-"）；其它物种必须显式给出
+
+design:                                  # P12-a A1：组比较设计（s10 消费；不配则退回 ctrl/case）
+  groups: ["ctrl", "treat"]              # 第一项=control，第二项=case（顺序即方向）
+  contrast: "treat_minus_ctrl"           # 差值命名基准，产物列名如 diff_treat_minus_ctrl
 
 integration:
   dims: <TBD, 用户确认>
@@ -68,9 +77,13 @@ clustering:                              # 需求10：候选分辨率与ARI
   ari_drop_threshold: <TBD, 用户确认>    # 相邻分辨率 ARI 骤降判定阈值
 
 compartments:                            # 需求12：需单独亚聚类的Compartment
-  targets: ["myeloid", "fibroblast"]
+  targets: ["myeloid", "fibroblast"]     # 第一个=primary（主线 compartment），其余=候补
   subcluster_resolution: <TBD, 用户确认>
   subcluster_npcs: 10                    # 子聚类 PCA 维数上限（P11A 起入 Config，默认10）
+
+annotation:                              # P12-a A4：marker 面板外置（P12-b C3 起消费）
+  marker_panel: "human_colon"            # 对应 references/marker_panels/<名称>.yaml；
+                                         # 面板按 物种_组织 命名（如 mouse_brain）
 
 cellchat:
   pathways_of_interest: ["TGFb", "CCL", "MIF"]
@@ -82,6 +95,8 @@ trajectory:
   target_compartment: ["<TBD, 如 myeloid>"]   # P11A 起支持列表（向后兼容单值）；
                                               # 第一个=primary（论文主线），其余=backup（候补存档）；
                                               # 各 compartment 独立执行，单一 FAIL 不阻断其余
+  start_cluster: {}                      # P11D-c：可选，<comp>: <簇id> 指定 slingshot 起点；
+                                         # 未指定的 comp 不指定起点
 
 scenic:
   backend: "<TBD, 用户确认: pyscenic(设计推荐) | r_scenic>"

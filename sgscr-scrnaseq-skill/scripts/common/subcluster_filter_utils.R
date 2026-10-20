@@ -67,3 +67,13 @@ sgs_filter_count_check <- function(obj, res_col, keep_ids, n_expected) {
   list(ok = identical(as.integer(n_actual), as.integer(n_expected)),
        n_actual = n_actual, n_expected = as.integer(n_expected))
 }
+
+# P12-a D5：删除子对象继承自父对象的 *_snn_res.* 扫描列（保留指定亚群列）。
+# 背景：s6 子对象带着父对象 S4 分辨率扫描列（如 RNA_snn_res.0.1..1.1），
+# 消费方 grep 首列会误取（P11C 实测）；根治 = 落盘前删除 + 取列一律 sprintf 精确匹配。
+sgs_drop_inherited_snn_cols <- function(obj, keep_col) {
+  snn <- grep("_snn_res\\.", colnames(obj@meta.data), value = TRUE)
+  drop <- setdiff(snn, keep_col)
+  if (length(drop)) obj@meta.data[drop] <- NULL
+  obj
+}

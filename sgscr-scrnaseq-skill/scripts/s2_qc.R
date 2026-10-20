@@ -31,8 +31,13 @@ n_before <- ncol(obj)
 
 # ---- QC 指标与过滤（阈值全部来自 Config，需求 6.2） ----
 # percent.mt/HB 必须算在 RNA assay 的 counts 上（integrated assay 无 counts 层）
+# P12-a A3：线粒体前缀随物种（human "^MT-" / mouse "^mt-"），config qc.mt_pattern 可覆盖
+mt_pattern <- if (!is.null(cfg$qc$mt_pattern)) cfg$qc$mt_pattern else {
+  switch(cfg$species$organism, human = "^MT-", mouse = "^mt-",
+         stop(sprintf("qc.mt_pattern 未配置且物种 %s 无默认线粒体前缀", cfg$species$organism), call. = FALSE))
+}
 Seurat::DefaultAssay(obj) <- "RNA"
-obj[["percent.mt"]] <- Seurat::PercentageFeatureSet(obj, pattern = "^MT-")
+obj[["percent.mt"]] <- Seurat::PercentageFeatureSet(obj, pattern = mt_pattern)
 obj[["percent.HB"]] <- Seurat::PercentageFeatureSet(obj, pattern = "^HB[^(P)]")
 
 obj <- subset(obj,

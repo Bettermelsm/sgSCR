@@ -16,8 +16,14 @@ sgs_drop_scale_layers <- function(obj, assay = "RNA") {
   rna <- obj@assays[[assay]]
   if (length(setdiff(Layers(rna), c("counts", "data"))) == 0 &&
       inherits(rna, "Assay5")) return(obj)   # 幂等出口：已是无残留的 Assay5
-  obj <- tryCatch(JoinLayers(obj, assay = assay),   # counts/data 可能同为分层（merge 产物）
-                  error = function(e) obj)          # 个别 v3/单层组合无方法时跳过合并
+  obj <- tryCatch(JoinLayers(obj, assay = assay),
+                  error = function(e) {
+                    # P12-a D2：只吞掉 v3/单层组合"无方法"这一已知错误，其余错误原样上抛
+                    msg <- conditionMessage(e)
+                    known <- grepl("没有适用于|no applicable method", msg)
+                    if (!known) stop(e)
+                    obj
+                  })
   rna <- obj@assays[[assay]]
   if (length(setdiff(Layers(rna), c("counts", "data"))) == 0 &&
       inherits(rna, "Assay5")) return(obj)          # 重建后二次校验（JoinLayers 生效情形）

@@ -55,6 +55,7 @@ out_all <- list()
 n_ok <- 0L
 comp_ok <- setNames(logical(length(comps)), comps)   # 显式成功标志（P11A 修正：不得以 detail 文本判成败）
 for (comp in comps) {
+  comp_started_at <- format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z")   # P12-a D3：每 comp 条目独立 started_at
   # P11D-c：优先读 S6b 清洗产物（存在时）；freshness 检查随之以实际输入为准
   in_rds <- file.path(cfg$paths$rds_dir, sprintf("s6b_%s_subcluster.rds", comp))
   input_src <- "s6b"
@@ -112,7 +113,7 @@ for (comp in comps) {
                              cluster_col = cluster_col, input = input_src,
                              start_cluster = if (!is.null(start_clus)) start_clus else NULL),
       outputs = as.list(c(out_rds, figs)),
-      started_at = started_at, finished_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"))
+      started_at = comp_started_at, finished_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"))
     log_info(STEP, paste("Quality_Gate:", gate$status, "-", gate$detail))
     out_all[[comp]] <- c(list(out_rds), as.list(figs))
     comp_ok[[comp]] <- identical(gate$status, "PASS")   # gate FAIL 也计入该 comp 未通过
@@ -125,7 +126,7 @@ for (comp in comps) {
       quality_gate = g,
       resolved_params = list(target_compartment = comp, role = role_of[[comp]]),
       outputs = list(),
-      started_at = started_at, finished_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"))
+      started_at = comp_started_at, finished_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"))
     log_error(STEP, paste("Quality_Gate:", g$status, "-", g$detail))
     g$detail
   })

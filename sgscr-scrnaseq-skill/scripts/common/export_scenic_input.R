@@ -11,7 +11,7 @@ if (is.na(config_path) || is.na(outdir)) {
 
 HERE <- dirname(normalizePath(sub("^--file=", "",
   grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)[1])))
-for (f in c("log_utils.R", "config_loader.R")) source(file.path(HERE, f))
+for (f in c("log_utils.R", "config_loader.R", "preflight_utils.R")) source(file.path(HERE, f))
 
 suppressPackageStartupMessages(library(Seurat))
 cfg <- sgs_load_config(config_path)
@@ -36,6 +36,17 @@ if (!is.null(s6b_f) && file.exists(s6b_f)) {
 }
 
 dir.create(outdir, recursive = TRUE, showWarnings = FALSE)
+# P12-a D7：freshness——已有 SCENIC 链产物不得早于实际输入（s5 或 S6b 清洗产物），
+# 否则 s9 复用旧 adjacencies/regulons 会静默用陈旧输入
+s9_ref <- if (exists("s6b_f") && !is.null(s6b_f) && file.exists(s6b_f)) s6b_f else {
+  p <- file.path(cfg$paths$rds_dir, "s5_obj_annotated.rds"); if (file.exists(p)) p else NULL
+}
+if (!is.null(s9_ref)) {
+  for (f in c("expr.csv", "adjacencies.tsv", "regulons.csv", "auc_matrix.csv", "regulon_activity.csv")) {
+    fp <- file.path(outdir, f)
+    if (file.exists(fp)) sgs_check_freshness(fp, s9_ref)
+  }
+}
 mat <- as.matrix(GetAssayData(obj, assay = "RNA", layer = "data"))
 write.csv(data.frame(gene = rownames(mat), mat, check.names = FALSE),
           file.path(outdir, "expr.csv"), row.names = FALSE)

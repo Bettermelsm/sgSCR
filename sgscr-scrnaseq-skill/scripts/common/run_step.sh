@@ -32,6 +32,40 @@ done
 [ -n "$STEP" ] || [ -n "$FROM" ] || die "need <step_id> or --from <step_id>"
 [ -z "$STEP" ] && STEP="$FROM"
 
+# P12-a A2：remote.mode=local 时本脚本本机直接执行（无需远程封装）；
+# =ssh 时本脚本预期已在 remote_work_dir 内被调用，此处仅提示而非拦截
+REMOTE_MODE="$(python3 - "$CONFIG" <<'PY'
+import sys, yaml
+cfg = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(((cfg.get("remote") or {}).get("mode")) or "local")
+PY
+)"
+case "$REMOTE_MODE" in
+  local) : ;;
+  ssh)   echo "[INFO] [run_step] remote.mode=ssh — 确认本脚本运行在 remote_work_dir 内（remote_exec.sh sync/exec 启动）" >&2 ;;
+  *)     die "remote.mode 必须为 local 或 ssh，当前: '$REMOTE_MODE'" ;;
+esac
+
+# P12-a D6：config.run_id 与输出目录 .run_id 标记一致性校验
+# （run1 误写事故固化：目录错配 → 立即拒绝，绝不静默写入别的 run）
+CFG_RUN_ID="$(python3 - "$CONFIG" <<'PY'
+import sys, yaml
+cfg = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print((cfg.get("run") or {}).get("run_id") or "")
+PY
+)"
+MANIFEST_PATH="$(python3 - "$CONFIG" <<'PY'
+import sys, yaml
+cfg = yaml.safe_load(open(sys.argv[1], encoding="utf-8")) or {}
+print(((cfg.get("paths") or {}).get("manifest_path")) or "")
+PY
+)"
+if [ -n "$MANIFEST_PATH" ] && [ -f "$(dirname "$MANIFEST_PATH")/.run_id" ]; then
+  DIR_RUN_ID="$(cat "$(dirname "$MANIFEST_PATH")/.run_id")"
+  [ "$DIR_RUN_ID" = "$CFG_RUN_ID" ] \
+    || die "run_id 不一致: config.run_id='$CFG_RUN_ID' 但输出目录 .run_id='$DIR_RUN_ID' — 请核对 --config 指向（run1 误写事故防护）"
+fi
+
 KEY="${STEP%%_*}"   # "s7_cellchat" -> "s7"
 [ -n "${STEP_ENV[$KEY]:-}" ] || die "unregistered step: $STEP (known keys: ${!STEP_ENV[*]})"
 ENV_KEY="${STEP_ENV[$KEY]}"

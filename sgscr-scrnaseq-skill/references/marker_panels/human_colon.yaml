@@ -1,0 +1,19 @@
+# human_colon.yaml — 人结肠组织 marker 面板（按谱系分组）
+# 来源：人结肠 UC 数据集实测面板（66 基因，跨谱系零重复），经 S4/S6 亚群表达量验证。
+# 供 s5/S6b 亚群注释消费（P12-b C3 接入）。
+# config 用法: annotation.marker_panel: "human_colon"  → references/marker_panels/human_colon.yaml
+species: human
+tissue: colon
+lineages:
+  pan_leukocyte: [PTPRC]
+  T_cell: [CD2, CD3E, CD3G]
+  B_plasma: [CD19, MS4A1, CD79A, PAX5, IGKC, JCHAIN]
+  NK_cytotoxic: [GZMB]
+  myeloid: [LYZ, CD14, FCN1, VCAN, FCGR3A, CD68, CD163, MRC1, C1QA, C1QB, APOE, S100A8, S100A9, MARCO, SPP1, CCR7]
+  dendritic: [CD1C, CD1E, CLEC9A, CLEC4C, IL3RA, FCER1A, LAMP3, CD207]
+  epithelial: [EPCAM, KRT8, KRT18, KRT20, FXYD3, CA1, CA2, FABP1, SLC26A3, GUCA2A]
+  fibroblast: [COL1A1, COL1A2, DCN, LUM, PDGFRA, PDGFRB, ACTA2, ACTG2, MYH11, MYOCD, RGS5]
+  endothelial: [PECAM1, VWF, PLVAP]
+  proliferating: [MKI67, TOP2A]
+  interferon_response: [ISG15, IFIT1, IFI44L]
+  glial_neural: [PLP1, S100B]

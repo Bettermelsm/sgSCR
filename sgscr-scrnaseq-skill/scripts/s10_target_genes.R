@@ -57,8 +57,8 @@ if (length(kept) == 0) {
   out_dir <- file.path(dirname(cfg$paths$manifest_path), "..", "target_genes")
   dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
   empty_stats <- data.frame(gene = character(0), major_cluster = character(0),
-                            mean_expr = numeric(0), mean_UC = numeric(0),
-                            mean_NC = numeric(0), diff_UC_minus_NC = numeric(0),
+                            mean_expr = numeric(0), mean_case = numeric(0),
+                            mean_ctrl = numeric(0), diff_case_minus_ctrl = numeric(0),
                             p_value = numeric(0), stringsAsFactors = FALSE)
   write.csv(empty_stats, file.path(out_dir, "target_gene_stats.csv"), row.names = FALSE)
   gate <- sgs_qc_gate(auto_pass = TRUE,
@@ -73,7 +73,10 @@ if (length(kept) == 0) {
   quit(status = 0)
 }
 
-# ---- 各 major_cluster 定位 + UC/NC 差异 ----
+# ---- 各 major_cluster 定位 + 组间差异（P12-a A1：组别从 config design 读取，代码零项目字面量） ----
+grp_cfg <- if (!is.null(cfg$design$groups)) as.character(unlist(cfg$design$groups)) else c("ctrl", "case")
+ctrl_grp <- grp_cfg[1]
+case_grp <- if (length(grp_cfg) > 1) grp_cfg[2] else grp_cfg[1]
 expr <- FetchData(obj, vars = kept, slot = "data")
 meta <- obj@meta.data
 group <- as.character(meta$group)
@@ -81,20 +84,35 @@ cluster <- as.character(meta$major_cluster)
 
 stats <- do.call(rbind, lapply(kept, function(g) {
   v <- expr[[g]]
-  uc <- v[group == "UC"]; nc <- v[group == "NC"]
-  p <- tryCatch(wilcox.test(uc, nc)$p.value, error = function(e) NA_real_)
+  case_v <- v[group == case_grp]; ctrl_v <- v[group == ctrl_grp]
+  p <- tryCatch(wilcox.test(case_v, ctrl_v)$p.value, error = function(e) NA_real_)
   data.frame(gene = g,
              major_cluster = paste(sort(unique(cluster[v > 0])), collapse = ";"),
              mean_expr = mean(v),
-             mean_UC = if (length(uc)) mean(uc) else NA_real_,
-             mean_NC = if (length(nc)) mean(nc) else NA_real_,
-             diff_UC_minus_NC = if (length(uc) && length(nc)) mean(uc) - mean(nc) else NA_real_,
+             mean_case = if (length(case_v)) mean(case_v) else NA_real_,
+             mean_ctrl = if (length(ctrl_v)) mean(ctrl_v) else NA_real_,
+             diff_case_minus_ctrl = if (length(case_v) && length(ctrl_v)) mean(case_v) - mean(ctrl_v) else NA_real_,
              p_value = p, stringsAsFactors = FALSE)
+}))
+
+# P12-a D1：per-major 拆分（需求 16.2）——基因 × major_cluster 的分组均值与差值
+per_major <- do.call(rbind, lapply(kept, function(g) {
+  v <- expr[[g]]
+  do.call(rbind, lapply(sort(unique(cluster)), function(cl) {
+    i <- cluster == cl
+    case_v <- v[i & group == case_grp]; ctrl_v <- v[i & group == ctrl_grp]
+    data.frame(gene = g, major_cluster = cl,
+               mean_case = if (length(case_v)) mean(case_v) else NA_real_,
+               mean_ctrl = if (length(ctrl_v)) mean(ctrl_v) else NA_real_,
+               diff_case_minus_ctrl = if (length(case_v) && length(ctrl_v)) mean(case_v) - mean(ctrl_v) else NA_real_,
+               n_case = length(case_v), n_ctrl = length(ctrl_v), stringsAsFactors = FALSE)
+  }))
 }))
 
 out_dir <- file.path(dirname(cfg$paths$manifest_path), "..", "target_genes")
 dir.create(out_dir, recursive = TRUE, showWarnings = FALSE)
 write.csv(stats, file.path(out_dir, "target_gene_stats.csv"), row.names = FALSE)
+write.csv(per_major, file.path(out_dir, "target_gene_stats_per_major.csv"), row.names = FALSE)
 
 # 各细胞表达表（基因→科学问题随 manifest 记录，文件按基因命名）
 expr_df <- cbind(data.frame(cell = colnames(obj), group = group, major_cluster = cluster),
@@ -126,6 +144,7 @@ sgs_manifest_append_step(cfg$paths$manifest_path, step_id = STEP, env_name = cfg
       science_q[intersect(kept, names(science_q))],
       intersect(kept, names(science_q)))),
     missing_genes = as.list(missing)),
-  outputs = as.list(c(file.path(out_dir, "target_gene_stats.csv"), expr_file, figs)),
+  outputs = as.list(c(file.path(out_dir, "target_gene_stats.csv"),
+                      file.path(out_dir, "target_gene_stats_per_major.csv"), expr_file, figs)),
   started_at = started_at, finished_at = format(Sys.time(), "%Y-%m-%dT%H:%M:%S%z"))
 log_info(STEP, "S10 complete")

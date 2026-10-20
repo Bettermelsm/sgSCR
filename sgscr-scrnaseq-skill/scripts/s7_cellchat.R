@@ -95,6 +95,13 @@ sgs_preflight(STEP, "cellchat.pathways_of_interest",
 suppressPackageStartupMessages(library(CellChat))
 
 cc_dir <- file.path(dirname(cfg$paths$manifest_path), "..", "cellchat")
+# P12-a D7：freshness——已有 s7 产物不得早于输入（s5 或 S6b 清洗产物）
+s7_upstream <- c(file.path(cfg$paths$rds_dir, "s5_obj_annotated.rds"),
+                 list.files(cfg$paths$rds_dir, pattern = "^s6b_.*_subcluster\\.rds$", full.names = TRUE))
+for (g in groups) {
+  stale <- file.path(cc_dir, sprintf("cellchat_%s.rds", g))
+  for (up in s7_upstream) if (file.exists(stale) && file.exists(up)) sgs_check_freshness(stale, up)
+}
 dir.create(cc_dir, recursive = TRUE, showWarnings = FALSE)
 cc_objs <- list()
 for (g in groups) {

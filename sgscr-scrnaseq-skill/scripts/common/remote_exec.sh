@@ -48,6 +48,23 @@ done
 [ -n "$CONFIG" ] && [ -f "$CONFIG" ] || die "--config <existing file> required"
 
 SSH_TARGET="$(yaml_get "$CONFIG" remote.ssh_target)"
+# P12-a A2：remote.mode=local → 单机模式，sync 无需同步、exec/fetch 本机直做
+REMOTE_MODE="$(yaml_get "$CONFIG" remote.mode)"
+case "$REMOTE_MODE" in
+  ""|local|ssh) ;;
+  *) die "remote.mode 必须为 local 或 ssh，当前: '$REMOTE_MODE'" ;;
+esac
+if [ "$REMOTE_MODE" = "local" ]; then
+  case "$MODE" in
+    sync)  log "remote.mode=local：单机模式，无需同步"; exit 0 ;;
+    exec)  [ $# -gt 0 ] || die "exec requires -- <command...>"; log "local 模式：本机执行: $*"; exec "$@" ;;
+    fetch) REMOTE_P="${1:-}"; LOCAL_P="${2:-}"
+           [ -n "$REMOTE_P" ] && [ -n "$LOCAL_P" ] || die "fetch requires -- <remote_path> <local_path>"
+           cp -r "$REMOTE_P" "$LOCAL_P" || die "fetch failed: $REMOTE_P"
+           log "local 模式：copied $REMOTE_P -> $LOCAL_P"; exit 0 ;;
+    *)     die "unknown mode: '$MODE' (sync|exec|fetch)" ;;
+  esac
+fi
 FRP_HOST="$(yaml_get "$CONFIG" remote.frp_fallback.host)"
 FRP_PORT="$(yaml_get "$CONFIG" remote.frp_fallback.port)"
 WORK_DIR="$(yaml_get "$CONFIG" remote.remote_work_dir)"
