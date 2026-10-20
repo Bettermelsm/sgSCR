@@ -2,7 +2,7 @@
 
 **来源仓库**：https://github.com/Bettermelsm/sgSCR
 **核心脚本**：`SG_scRNA_seq_FLOW_V2.1.R`（单体 R 脚本，PART1–PART8，Seurat v5 工作流）
-**首个验证案例**：SGlcl01 上人 UC 肠黏膜 10X 数据（NC1/NC3/NC4 vs UC1/UC2/UC3，约 4.4 万细胞；UC4 剔除，依据见 Config）
+**首个验证案例**：远程服务器上人 UC 肠黏膜 10X 数据（NC1/NC3/NC4 vs UC1/UC2/UC3/UC4，7 样本，QC 后 57,230 细胞；UC4 保留，裁决依据见 Manifest sample_decisions）
 
 ## PART1–PART8 → S0–S11 改造对照表
 

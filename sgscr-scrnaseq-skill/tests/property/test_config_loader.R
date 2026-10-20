@@ -1,6 +1,6 @@
 # Property tests for config_loader.R
 # Requires: hedgehog (fallback: quickcheck), yaml
-# Run on SGlcl01 R main env (no local R on Windows workstation):
+# Run on the remote R main env (no local R on Windows workstation):
 #   Rscript tests/property/test_config_loader.R
 #
 # Feature: sgscr-scrnaseq-skill, Property 2: Config 加载的完整性与往返一致性
@@ -18,7 +18,7 @@ HERE <- dirname(normalizePath(sub("^--file=", "",
   grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)[1])))
 source(file.path(HERE, "..", "..", "scripts", "common", "config_loader.R"))
 
-gen_string <- gen.element(c("a", "bc", "run1", "SGlcl01", "human", "x_1"))
+gen_string <- gen.element(c("a", "bc", "run1", "hostA", "human", "x_1"))
 gen_scalar <- gen.choice(gen_string, gen.int(1000), gen.unif(0, 1))
 
 # 构造"完整合法配置"：全部必需字段赋任意标量值

@@ -1,6 +1,6 @@
 # Property tests for manifest_utils.R
 # Requires: hedgehog, jsonlite
-# Run on an R host (SGlcl01 main env or any R with the two packages):
+# Run on an R host (remote main env or any R with the two packages):
 #   Rscript tests/property/test_manifest_utils.R
 #
 # Feature: sgscr-scrnaseq-skill, Property 13: Manifest 决议值回写一致性

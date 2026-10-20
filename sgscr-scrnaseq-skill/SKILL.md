@@ -47,8 +47,8 @@ metadata:
 
 ## 平台基线
 
-- **计算端**：SGlcl01（数据默认 `/mnt/sda1/LSM_scRNAseq/20241118BFlin_UC/`，本机不搬运大数据）
-- **连接**：优先 ssh 直连 `ssh SGlcl01`，不可用走 frp 隧道（Config `remote.frp_fallback`）
+- **计算端**：远程 Linux 服务器（数据留在服务器本地，本机不搬运大数据）
+- **连接**：优先 ssh 直连（Config `remote.host_alias`），不可用走 frp 隧道（Config `remote.frp_fallback`）
 - **环境**：R 主环境（S0–S6, S10, S11）+ 三个隔离 conda env：`sgscr_cellchat`(S7)、`sgscr_trajectory`(S8)、`sgscr_scenic`(S9)
 - **配置**：`config/config.example.yaml` → 用户填成 `config.yaml`；`<TBD, 用户确认>` 占位符未填完不允许运行
 

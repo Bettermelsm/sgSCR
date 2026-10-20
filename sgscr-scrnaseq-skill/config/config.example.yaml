@@ -27,12 +27,12 @@ samples:
       reason: "<TBD, 用户确认剔除依据>"
 
 remote:
-  host_alias: "SGlcl01"
-  ssh_target: "<TBD, 用户确认，如 sea@sglcl01 或 ssh config 中的 Host 别名>"
+  host_alias: "<TBD, 用户确认，ssh config 中的 Host 别名>"
+  ssh_target: "<TBD, 用户确认，如 <user>@<host> 或 ssh config 中的 Host 别名>"
   frp_fallback:
     host: "<TBD, 用户确认>"
     port: <TBD, 用户确认>
-  data_dir: "/mnt/sda1/LSM_scRNAseq/20241118BFlin_UC/"   # 需求3.3 默认值
+  data_dir: "<TBD, 用户确认，10X 三联文件所在目录>"   # 需求3.3
   remote_work_dir: "<TBD, 用户确认，如 /opt/sgscr/runs/{run_id}>"
   triplet_files: ["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"]
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# setup_envs.sh — 创建三个隔离 conda 环境（SGlcl01 上运行，mamba 优先）
+# setup_envs.sh — 创建三个隔离 conda 环境（远程服务器上运行，mamba 优先）
 # Validates: Requirements 4.1
 #
 # 用法: bash scripts/common/setup_envs.sh [--main-pkgs-only]
@@ -7,7 +7,7 @@
 #   bash setup_envs.sh --cellchat <name> --trajectory <name> --scenic <name>
 #
 # 说明：
-# - main 环境（Seurat 等）通常 SGlcl01 已有，默认跳过创建，只装缺失的轻量包
+# - main 环境（Seurat 等）通常服务器已有，默认跳过创建，只装缺失的轻量包
 # - Monocle3 / R 版 SCENIC 是 Config 可选项，此处不装（迭代项再评估）
 # - pySCENIC 走 conda-forge + pip（pyscenic 在 pip 上更新）
 
