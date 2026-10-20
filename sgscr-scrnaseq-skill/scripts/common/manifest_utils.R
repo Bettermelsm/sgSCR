@@ -102,8 +102,58 @@ sgs_manifest_add_figure_panel <- function(manifest_path, fig_id, panel_id,
   invisible(TRUE)
 }
 
+# ---- 复用产物导入（P11D-d，裁决 a）：把源 run 的 step 条目复制进本 run Manifest ----
+# Validates: copy-run（s0–s5 复用上游产物）场景的 s11 完整性核对
+#
+# 语义：按 steps（step_id 字符向量）从 src_manifest 复制条目（源中同 id 多条时取最早一条），
+# 每条追加 provenance = list(copied_from_run, src_step_started_at, artifact_md5)。
+# artifact_md5：对条目 outputs 逐文件重算 MD5；文件缺失 → FAIL；
+# 若目标 Manifest 已存在同名 step 且带 provenance（重复导入），逐文件与已记录 MD5 比对，
+# 不一致 → FAIL（产物被篡改/替换即拦截）。s11 门控逻辑本身不改。
+sgs_manifest_import_steps <- function(dst_manifest_path, src_manifest_path, steps) {
+  src <- .sgs_manifest_read(src_manifest_path)
+  dst <- .sgs_manifest_read(dst_manifest_path)
+  steps <- as.character(steps)
+  # 源中同 step_id 可能有多条（历史重跑），取最早一条
+  src_by_id <- list()
+  for (s in src$steps) if (is.null(src_by_id[[s$step_id]])) src_by_id[[s$step_id]] <- s
+  miss <- setdiff(steps, names(src_by_id))
+  if (length(miss)) stop(sprintf("源 Manifest 缺待导入 step: %s", paste(miss, collapse = ",")), call. = FALSE)
+  md5_of <- function(p) digest::digest(file = p, algo = "md5")
+  # 目标已有条目的 provenance MD5（重复导入校验用）
+  dst_have <- list()
+  for (s in dst$steps) if (!is.null(s$provenance)) dst_have[[s$step_id]] <- s$provenance
+  imported <- list()
+  for (id in steps) {
+    s <- src_by_id[[id]]
+    outs <- if (is.null(s$outputs)) character(0) else as.character(unlist(s$outputs))
+    md5 <- list()
+    for (p in outs) {
+      if (!file.exists(p)) {
+        stop(sprintf("step %s 产物缺失，拒绝导入: %s", id, p), call. = FALSE)
+      }
+      md5[[p]] <- md5_of(p)
+      if (!is.null(dst_have[[id]]) && !is.null(dst_have[[id]]$artifact_md5[[p]]) &&
+          dst_have[[id]]$artifact_md5[[p]] != md5[[p]]) {
+        stop(sprintf("step %s 产物 MD5 与已导入记录不一致（产物被改动）: %s", id, p), call. = FALSE)
+      }
+    }
+    s$provenance <- list(copied_from_run = src$run_id,
+                         src_step_started_at = s$started_at,
+                         artifact_md5 = md5)
+    imported[[id]] <- s
+  }
+  # 只追加：目标中尚不存在的 step 才追加（已存在且 MD5 校验通过的不重复追加）
+  dst_ids <- vapply(dst$steps, function(s) s$step_id, character(1))
+  new <- imported[setdiff(names(imported), dst_ids)]
+  for (s in new) dst$steps <- append(dst$steps, list(s))
+  .sgs_manifest_write(dst_manifest_path, dst)
+  invisible(list(imported = names(new), verified = setdiff(steps, names(new))))
+}
+
 # 公开 API 即唯一写入口：sgs_manifest_append_step / sgs_manifest_set_resolved /
-# sgs_manifest_add_figure_panel。不导出整体读/写函数，防止绕过"只追加"约束（P14）。
+# sgs_manifest_add_figure_panel / sgs_manifest_import_steps。不导出整体读/写函数，
+# 防止绕过"只追加"约束（P14）；import_steps 是复制语义的显式窄口（P11D-d）。
 
 # ---- 内部：读/写与时间 ----
 .sgs_manifest_read <- function(manifest_path) {
