@@ -1,0 +1,108 @@
+# config/config.example.yaml
+# sgscr-scrnaseq-skill 配置模板。所有 <TBD, 用户确认> 占位符需用户确认后填入；未填完不允许用于生产运行。
+
+run:
+  run_id: "<TBD, 自动生成或用户指定，如 20260115_UC_run1>"
+  random_seed: <TBD, 用户确认>
+
+species:
+  organism: "human"                      # 显式参数化（需求5.1）
+  singleR_reference: "<TBD, 用户确认>"    # 如 HumanPrimaryCellAtlasData（需求5.2）；校验见 P5
+  reference_species: "human"             # 所选参考集所属物种；P5 校验本字段 == organism
+
+samples:
+  manifest:                              # 样本清单与分组（需求6.1）
+    - { sample_id: "NC1", group: "NC" }
+    - { sample_id: "NC3", group: "NC" }
+    - { sample_id: "NC4", group: "NC" }
+    - { sample_id: "UC1", group: "UC" }
+    - { sample_id: "UC2", group: "UC" }
+    - { sample_id: "UC3", group: "UC" }
+    - { sample_id: "UC4", group: "UC" }    # 2026-10-07 用户裁决纳入：早期手动分析曾因 tSNE
+                                           # 目测剔除 UC4，经 major_cluster×样本定量复核
+                                           # （炎症型上皮 3.1%，与 UC3 相当）推翻，见 Manifest
+                                           # sample_decisions；P11C 做去 UC4 敏感性分析
+  excluded:                              # 样本剔除决策及依据（需求6.5）；S0 校验自动跳过
+    - sample_id: "<示例占位, 如 S5>"
+      reason: "<TBD, 用户确认剔除依据>"
+
+remote:
+  host_alias: "SGlcl01"
+  ssh_target: "<TBD, 用户确认，如 sea@sglcl01 或 ssh config 中的 Host 别名>"
+  frp_fallback:
+    host: "<TBD, 用户确认>"
+    port: <TBD, 用户确认>
+  data_dir: "/mnt/sda1/LSM_scRNAseq/20241118BFlin_UC/"   # 需求3.3 默认值
+  remote_work_dir: "<TBD, 用户确认，如 /opt/sgscr/runs/{run_id}>"
+  triplet_files: ["barcodes.tsv.gz", "features.tsv.gz", "matrix.mtx.gz"]
+
+envs:                                    # 需求4：按工具隔离环境（conda env 名称）
+  main: "<TBD, 用户确认，如 sgscr_main 或复用已有环境名>"
+  cellchat: "<TBD, 用户确认，如 sgscr_cellchat>"
+  trajectory: "<TBD, 用户确认，如 sgscr_trajectory>"
+  scenic: "<TBD, 用户确认，如 sgscr_scenic>"
+
+qc:                                      # 需求6.2：QC阈值可配置
+  min_features: <TBD, 用户确认>
+  max_features: <TBD, 用户确认>
+  min_cells_per_gene: <TBD, 用户确认>
+  max_percent_mt: <TBD, 用户确认>
+  max_percent_hb: <TBD, 用户确认>
+  min_cells_pass_gate: <TBD, 用户确认>   # S2 Quality_Gate 下限
+
+integration:
+  dims: <TBD, 用户确认>
+  reduction: "<TBD, 用户确认，如 cca 或 rpca>"
+  nfeatures_hvg: <TBD, 用户确认>
+
+pca:                                     # 需求9：PC数定量选择阈值
+  npcs_compute: <TBD, 用户确认，如 50>
+  cum_variance_threshold_pct: <TBD, 用户确认，设计默认思路 90>
+  single_pc_contrib_threshold_pct: <TBD, 用户确认，设计默认思路 5>
+  elbow_diff_threshold: <TBD, 用户确认>
+  fallback_npc: <TBD, 用户确认>          # 退化输入时的备用 PC 数（P8）
+  manual_pc_override: null               # 人工覆盖 PC 数（如 30）：设置后跳过自动算法，Manifest 如实记录 basis=manual_override 并保留自动算法建议值对比；不设/置 null 走自动流程
+
+clustering:                              # 需求10：候选分辨率与ARI
+  candidate_resolutions: [<TBD, 用户确认，如 0.1, 0.3, 0.5, 0.7, 0.9, 1.1>]
+  ari_drop_threshold: <TBD, 用户确认>    # 相邻分辨率 ARI 骤降判定阈值
+
+compartments:                            # 需求12：需单独亚聚类的Compartment
+  targets: ["myeloid", "fibroblast"]
+  subcluster_resolution: <TBD, 用户确认>
+  subcluster_npcs: 10                    # 子聚类 PCA 维数上限（P11A 起入 Config，默认10）
+
+cellchat:
+  pathways_of_interest: ["TGFb", "CCL", "MIF"]
+  min_cells_per_group: <TBD, 用户确认>
+  exclude_groups: []                     # P11A 起支持；真实 UC 运行设为 ["low_quality"]
+
+trajectory:
+  tool: "<TBD, 用户确认: slingshot(设计推荐) | monocle3>"
+  target_compartment: ["<TBD, 如 myeloid>"]   # P11A 起支持列表（向后兼容单值）；
+                                              # 第一个=primary（论文主线），其余=backup（候补存档）；
+                                              # 各 compartment 独立执行，单一 FAIL 不阻断其余
+
+scenic:
+  backend: "<TBD, 用户确认: pyscenic(设计推荐) | r_scenic>"
+  species_db_path: "<TBD, 用户确认，物种参考数据库(feather)本地路径>"
+  target_subset: "<TBD, 用户确认，如 fibroblast 相关亚群>"
+  nes_threshold: 3.0                     # pySCENIC 标准阈值；mock 冒烟专用更低值不代表正式推荐
+
+target_genes:                            # 需求16：目标基因清单
+  genes: ["SLC26A3", "GUCA2A"]
+  science_questions:
+    SLC26A3: "<TBD, 用户确认：该基因对应要回答的科学问题>"
+    GUCA2A: "<TBD, 用户确认：该基因对应要回答的科学问题>"
+
+figure:                                  # 需求18：图表输出规格
+  dpi: <TBD, 用户确认，建议默认 300>
+  width_in: <TBD, 用户确认>
+  height_in: <TBD, 用户确认>
+  formats: ["pdf", "tiff"]
+  panel_map: "<TBD, 用户确认：figure_id/panel_id 映射方式，可为单独 csv>"
+
+paths:
+  figures_dir: "<TBD, 用户确认，如 {remote_work_dir}/figures>"
+  rds_dir: "<TBD, 用户确认，如 {remote_work_dir}/rds>"
+  manifest_path: "<TBD, 用户确认，如 {remote_work_dir}/manifest/manifest.json>"
