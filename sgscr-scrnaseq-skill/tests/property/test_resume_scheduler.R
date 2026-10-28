@@ -56,11 +56,17 @@ test_that("P6: resume from k skips <k; missing prerequisite errors with path", {
   )
 })
 
-test_that("P6-s6-special: s7 resume needs s6 compartment output", {
-  d <- .mock_rds_dir("s7")   # 建 s0–s5 产物，无 s6
-  expect_error(sgs_resume_plan("s7", d), regexp = "no s6_.*_subcluster.rds")
-  writeLines("x", file.path(d, "s6_myeloid_subcluster.rds"))
+test_that("P6-s6-special: s7 resume needs s6/s6b compartment outputs", {
+  d <- .mock_rds_dir("s7")   # 建 s0–s5 产物，无 s6/s6b
+  # 链 s6 -> s6b -> s7：s7 的直接前序是 s6b
+  expect_error(sgs_resume_plan("s7", d), regexp = "no s6b_.*_subcluster.rds")
+  writeLines("x", file.path(d, "s6b_myeloid_subcluster.rds"))
   expect_silent(sgs_resume_plan("s7", d))
+  # s6b 自身的前序是 s6
+  d2 <- .mock_rds_dir("s6b")   # 建 s0–s5 产物
+  expect_error(sgs_resume_plan("s6b", d2), regexp = "no s6_.*_subcluster.rds")
+  writeLines("x", file.path(d2, "s6_myeloid_subcluster.rds"))
+  expect_silent(sgs_resume_plan("s6b", d2))
 })
 
 test_that("P6-invalid: unknown step errors", {

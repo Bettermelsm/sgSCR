@@ -13,7 +13,7 @@ set -euo pipefail
 die() { echo "[ERROR] [run_step] $*" >&2; exit 1; }
 
 declare -A STEP_ENV=(
-  [s0]="main" [s1]="main" [s2]="main" [s2b]="main" [s3]="main" [s4]="main"
+  [s0]="main" [s1]="main" [s2]="main" [s2b]="main" [s3]="main" [s4]="main" [s6b]="main"
   [s5]="main" [s6]="main" [s7]="cellchat" [s8]="trajectory" [s9]="scenic"
   [s10]="main" [s10b]="main" [s11]="main"
 )

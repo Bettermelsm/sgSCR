@@ -16,6 +16,7 @@
   s4  = "s4_obj_cluster.rds",
   s5  = "s5_obj_annotated.rds",
   s6  = "s6_<compartment>_subcluster.rds",   # 每 Compartment 一份，S6 内部自行展开
+  s6b = "s6b_<compartment>_subcluster.rds",  # 每 Compartment 一份（过滤后），与 s6 同展开语义
   s7  = NA, s8 = NA, s9 = NA,                # 隔离环境模块产物按组目录判定
   s10 = NA,                                  # s10 产物在 run_root/{target_genes,diagnostics,module_score}，s10b 自行 preflight
   s10b = "stats/sample_level_summary.csv",
@@ -37,6 +38,12 @@ sgs_resume_plan <- function(from_step, rds_dir, step_table = names(.sgs_STEP_OUT
       hits <- list.files(rds_dir, pattern = "^s6_.*_subcluster\\.rds$")
       if (length(hits) == 0) {
         stop(sprintf("Missing prerequisite output for %s: no s6_*_subcluster.rds in %s",
+                     key, rds_dir), call. = FALSE)
+      }
+    } else if (identical(prev_out, "s6b_<compartment>_subcluster.rds")) {
+      hits <- list.files(rds_dir, pattern = "^s6b_.*_subcluster\\.rds$")
+      if (length(hits) == 0) {
+        stop(sprintf("Missing prerequisite output for %s: no s6b_*_subcluster.rds in %s",
                      key, rds_dir), call. = FALSE)
       }
     } else if (!is.na(prev_out) && !file.exists(file.path(rds_dir, prev_out))) {

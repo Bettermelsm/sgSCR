@@ -38,12 +38,29 @@ if (length(problems) > 0) sgs_preflight(STEP, problems, character(0))
 
 ov <- sgs_manifest_steps_overview(manifest_path)
 ov$key <- sub("^(s[0-9]+[a-z]?).*", "\\1", ov$step_id)   # s10/s10b/s11 两位编号不能只取前2字符
-need <- c(sprintf("s%d", 0:10), "s10b")   # 阶段12：s10b 接入依赖链 s10 -> s10b -> s11
+# 期望步骤集：s0–s10 + s6b（需求 22.1/22.9：清洗亚群防线必须记账）+ s10b
+need <- c(sprintf("s%d", 0:10), "s6b", "s10b")
 missing_steps <- setdiff(need, ov$key)
+
+# s2b 记账规则（需求 24.4）：开启时必须真实执行；关闭时不得因"默认关闭"而完全不记账，
+# 须存在状态为 SKIPPED 的条目，缺该条目即 FAIL
+s2b_enabled <- isTRUE(cfg$ambient$correction$enabled)
+if (!"s2b" %in% ov$key) {
+  missing_steps <- c(missing_steps, "s2b")   # 无任何 s2b 条目：无论开关与否都缺记账
+} else if (!s2b_enabled) {
+  # SKIPPED 记在 quality_gate.detail / resolved_params（gate_status 仍为三态），回读原文核实
+  s2b_text <- vapply(Filter(function(x) grepl("^s2b", x$step_id),
+                            .sgs_manifest_read(manifest_path)$steps),
+    function(st) paste(c(st$quality_gate$detail, st$resolved_params), collapse = " "),
+    character(1))
+  if (!any(grepl("SKIPPED", s2b_text))) {
+    missing_steps <- c(missing_steps, "s2b(SKIPPED 条目缺失)")
+  }
+}
 
 # ---- 阶段14（需求 25.2）：样本代表性告警进图注 ----
 repr_note <- NA_character_
-repr_file <- file.path(dirname(manifest_path), "diagnostics", "sample_representation.csv")
+repr_file <- file.path(dirname(dirname(manifest_path)), "diagnostics", "sample_representation.csv")
 if (file.exists(repr_file)) {
   repr <- read.csv(repr_file, check.names = FALSE)
   drv <- repr[repr$single_sample_driven %in% TRUE, , drop = FALSE]
@@ -100,9 +117,11 @@ auto_pass <- length(missing_steps) == 0 && length(missing_figs) == 0 &&
   nrow(fig_rows) > 0
 gate <- sgs_qc_gate(
   auto_pass = auto_pass,
-  detail = sprintf("steps %d/%d (缺: %s); figures %d 张已登记 (缺: %s); gate: %s",
+  detail = sprintf("steps %d/%d (缺: %s); expected=[%s]; actual=[%s]; figures %d 张已登记 (缺: %s); gate: %s",
                    length(intersect(need, ov$key)), length(need),
                    if (length(missing_steps)) paste(missing_steps, collapse = ",") else "无",
+                   paste(need, collapse = ","),
+                   paste(unique(ov$key), collapse = ","),
                    sum(idx$exists & !is.na(idx$fig_id)),
                    if (length(missing_figs)) paste(basename(missing_figs), collapse = ",") else "无",
                    gate_tab))

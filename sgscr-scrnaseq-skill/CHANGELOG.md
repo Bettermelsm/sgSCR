@@ -16,7 +16,9 @@
   输出 `diagnostics/ambient_rna.csv` 检出比例；超 `ambient.warn_threshold` 告警入 Manifest `warnings.ambient_rna`
 - **S2b 环境 RNA 校正**（`scripts/s2b_ambient_correct.R`，需求 24.4）：**默认关闭**照常跳过；
   开启而后端（celda/decontX）缺失必须**显式失败并报告缺失包名**，不静默、不伪造校正；
-  开启时产出 `rds/s2b_obj_corrected.rds`（assay "decontX"，不覆盖 s2 产物）
+  开启时产出 `rds/s2b_obj_corrected.rds`（assay "decontX"，不覆盖 s2 产物）。
+  **注：校正后端（celda/decontX）未在开发环境安装，校正路径未经实际运行验证（遵守"不安装新包"约束）；
+  已验证的是默认关闭路径的逐元素相等（`tests/unit/test_s2b_skip_matrix_equal.R`）与开启-缺后端的显式失败分支**
 - **S10 样本代表性告警**（需求 25）：(组,细胞群) 最大单样本占比 > `diagnostics.single_sample_dominance_threshold`
   （默认 0.70）→ 告警 + `single_sample_driven=TRUE` + 主导样本 ID；经 `diagnostics/sample_representation.csv`
   传递到 S10b 汇总表与 S11 图注

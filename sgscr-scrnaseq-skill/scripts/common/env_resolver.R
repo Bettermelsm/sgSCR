@@ -10,7 +10,7 @@
 # Step → Config envs 键 的注册表（design.md「C. 环境隔离架构」）
 .sgs_STEP_ENV <- c(
   s0 = "main", s1 = "main", s2 = "main", s3 = "main", s4 = "main",
-  s5 = "main", s6 = "main",
+  s5 = "main", s6 = "main", s6b = "main",
   s7 = "cellchat", s8 = "trajectory", s9 = "scenic",
   s10 = "main", s11 = "main"
 )
