@@ -77,7 +77,16 @@ for (comp in targets) {
   plt <- ggplot(umap_df, aes(umap_1, umap_2, color = subcluster)) +
     geom_point(size = 0.6) + theme_classic() +
     ggtitle(sprintf("%s subclusters (n=%d)", comp, n_cells))
-  figs <- sgs_save_plot(cfg, "P6", "PanelA", paste0(comp, "_subcluster_UMAP"), plt, STEP)
+  # 阶段15：源数据 = 逐细胞 UMAP + 亚群 + 样本 + 各(亚群,样本)细胞数
+  umap_src <- data.frame(
+    subcluster = umap_df$subcluster,
+    sample_id = as.character(sub$sample_id),
+    umap_1 = umap_df$umap_1, umap_2 = umap_df$umap_2,
+    stringsAsFactors = FALSE)
+  umap_src$n_cells <- as.integer(table(paste(umap_src$subcluster, umap_src$sample_id))[
+    paste(umap_src$subcluster, umap_src$sample_id)])
+  figres <- sgs_save_plot(cfg, "P6", "PanelA", paste0(comp, "_subcluster_UMAP"), plt, umap_src, STEP)
+  figs <- unlist(figres$files)
 
   out_rds <- file.path(cfg$paths$rds_dir, sprintf("s6_%s_subcluster.rds", comp))
   saveRDS(sub, out_rds)

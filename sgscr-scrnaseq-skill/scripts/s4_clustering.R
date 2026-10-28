@@ -50,7 +50,18 @@ for (r in resolutions) {
   obj <- Seurat::FindClusters(obj, resolution = r, verbose = FALSE)
 }
 clustree_plt <- clustree::clustree(obj, prefix = "RNA_snn_res.")
-figs <- sgs_save_plot(cfg, "P4.1", "PanelA", "Resolution_clustree", clustree_plt, STEP)
+# 阶段15：源数据 = 各分辨率 × 簇 × 样本细胞数
+res_cols <- sprintf("RNA_snn_res.%g", resolutions)
+clu_src <- do.call(rbind, lapply(res_cols, function(rc) {
+  tb <- table(obj@meta.data[[rc]], obj$sample_id)
+  df <- as.data.frame(tb, responseName = "n_cells")
+  names(df)[1] <- "cluster"
+  data.frame(resolution = rc, cluster = as.character(df$cluster),
+             sample_id = as.character(df$Var2), n_cells = df$n_cells,
+             stringsAsFactors = FALSE)
+}))
+figres <- sgs_save_plot(cfg, "P4.1", "PanelA", "Resolution_clustree", clustree_plt, clu_src, STEP)
+figs <- unlist(figres$files)
 
 # ---- ARI 相邻分辨率曲线（需求 10.2，纯 R ARI） ----
 ari_seq <- vapply(2:length(resolutions), function(i) {

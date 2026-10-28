@@ -11,12 +11,14 @@
   s0  = NA,                                  # S0 产物为 manifest 本身
   s1  = "s1_obj_int.rds",
   s2  = "s2_obj_qc.rds",
+  s2b = NA,                                  # 可选步骤（默认 SKIPPED，无硬产物）；链 s2 -> (s2b) -> s3
   s3  = "s3_obj_pca.rds",
   s4  = "s4_obj_cluster.rds",
   s5  = "s5_obj_annotated.rds",
   s6  = "s6_<compartment>_subcluster.rds",   # 每 Compartment 一份，S6 内部自行展开
   s7  = NA, s8 = NA, s9 = NA,                # 隔离环境模块产物按组目录判定
-  s10 = "target_genes/SLC26A3_GUCA2A_expr.csv",
+  s10 = NA,                                  # s10 产物在 run_root/{target_genes,diagnostics,module_score}，s10b 自行 preflight
+  s10b = "stats/sample_level_summary.csv",
   s11 = NA
 )
 

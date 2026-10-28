@@ -53,7 +53,15 @@ plt <- Seurat::VlnPlot(obj, features = c("nFeature_RNA", "nCount_RNA",
                                          "percent.mt", "percent.HB"),
                        group.by = "sample_id", ncol = 2) &
   ggplot2::theme(axis.text.x = ggplot2::element_text(angle = 45, hjust = 1))
-figs <- sgs_save_plot(cfg, "P2.1", "PanelA", "QC_violin", plt, STEP)
+# 阶段15：源数据长表（逐细胞指标 + 样本标识 + 各样本细胞数）
+qc_src <- data.frame(
+  sample_id = as.character(obj$sample_id),
+  nFeature_RNA = obj$nFeature_RNA, nCount_RNA = obj$nCount_RNA,
+  percent.mt = obj$percent.mt, percent.HB = obj$percent.HB,
+  stringsAsFactors = FALSE)
+qc_src$n_cells <- as.integer(table(qc_src$sample_id)[qc_src$sample_id])
+figres <- sgs_save_plot(cfg, "P2.1", "PanelA", "QC_violin", plt, qc_src, STEP)
+figs <- unlist(figres$files)
 
 # ---- Quality_Gate：自动判定 + 人工复查标记 ----
 cells_ok <- n_after > cfg$qc$min_cells_pass_gate

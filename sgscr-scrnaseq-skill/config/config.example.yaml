@@ -11,17 +11,10 @@ species:
   reference_species: "human"             # 所选参考集所属物种；P5 校验本字段 == organism
 
 samples:
-  manifest:                              # 样本清单与分组（需求6.1）
-    - { sample_id: "NC1", group: "NC" }
-    - { sample_id: "NC3", group: "NC" }
-    - { sample_id: "NC4", group: "NC" }
-    - { sample_id: "UC1", group: "UC" }
-    - { sample_id: "UC2", group: "UC" }
-    - { sample_id: "UC3", group: "UC" }
-    - { sample_id: "UC4", group: "UC" }    # 2026-10-07 用户裁决纳入：早期手动分析曾因 tSNE
-                                           # 目测剔除 UC4，经 major_cluster×样本定量复核
-                                           # （炎症型上皮 3.1%，与 UC3 相当）推翻，见 Manifest
-                                           # sample_decisions；P11C 做去 UC4 敏感性分析
+  manifest:                              # 样本清单与分组（需求6.1）；样本 ID/分组名由项目决定，原文不转换
+    - { sample_id: "<TBD, 用户确认：样本1 ID>", group: "<TBD, 用户确认：分组名>" }
+    - { sample_id: "<TBD, 用户确认：样本2 ID>", group: "<TBD, 用户确认：分组名>" }
+    # excluded 样本写法：- { sample_id: "X", reason: "QC 不合格/用户裁决排除" }
   excluded:                              # 样本剔除决策及依据（需求6.5）；S0 校验自动跳过
     - sample_id: "<示例占位, 如 S5>"
       reason: "<TBD, 用户确认剔除依据>"
@@ -77,12 +70,14 @@ clustering:                              # 需求10：候选分辨率与ARI
   ari_drop_threshold: <TBD, 用户确认>    # 相邻分辨率 ARI 骤降判定阈值
 
 compartments:                            # 需求12：需单独亚聚类的Compartment
-  targets: ["myeloid", "fibroblast"]     # 第一个=primary（主线 compartment），其余=候补
+  targets: ["<TBD, 用户确认：primary compartment>", "<TBD, 用户确认：候补 compartment>"]
+                                         # 第一个=primary（主线 compartment），其余=候补
   subcluster_resolution: <TBD, 用户确认>
   subcluster_npcs: 10                    # 子聚类 PCA 维数上限（P11A 起入 Config，默认10）
 
 annotation:                              # P12-a A4：marker 面板外置（P12-b C3 起消费）
-  marker_panel: "human_colon"            # 对应 references/marker_panels/<名称>.yaml；
+  marker_panel: "<TBD, 用户确认：如 human_colon / mouse_brain>"
+                                         # 对应 references/marker_panels/<名称>.yaml；
                                          # 面板按 物种_组织 命名（如 mouse_brain）
 
 cellchat:
@@ -104,11 +99,11 @@ scenic:
   target_subset: "<TBD, 用户确认，如 fibroblast 相关亚群>"
   nes_threshold: 3.0                     # pySCENIC 标准阈值；mock 冒烟专用更低值不代表正式推荐
 
-target_genes:                            # 需求16：目标基因清单
-  genes: ["SLC26A3", "GUCA2A"]
+target_genes:                            # 需求16：目标基因清单（基因名由用户项目决定）
+  genes: ["<TBD, 用户确认：目标基因1>", "<TBD, 用户确认：目标基因2>"]
   science_questions:
-    SLC26A3: "<TBD, 用户确认：该基因对应要回答的科学问题>"
-    GUCA2A: "<TBD, 用户确认：该基因对应要回答的科学问题>"
+    "<TBD, 用户确认：目标基因1>": "<TBD, 用户确认：该基因对应要回答的科学问题>"
+    "<TBD, 用户确认：目标基因2>": "<TBD, 用户确认：该基因对应要回答的科学问题>"
 
 figure:                                  # 需求18：图表输出规格
   dpi: <TBD, 用户确认，建议默认 300>
@@ -116,6 +111,31 @@ figure:                                  # 需求18：图表输出规格
   height_in: <TBD, 用户确认>
   formats: ["pdf", "tiff"]
   panel_map: "<TBD, 用户确认：figure_id/panel_id 映射方式，可为单独 csv>"
+  font_family: "<TBD, 用户确认，如 Helvetica 或 Arial（需求18.5）>"
+  base_size: <TBD, 用户确认，如 10>       # 需求18.5 统一基础字号
+
+stats:                                   # 需求23：s10b 样本级统计参数（阶段12）
+  min_cells_per_sample: <TBD, 用户确认，设计默认 10>     # 低于此值样本入明细但不入汇总（23.6）
+  min_separation_margin: <TBD, 用户确认>                 # 分离余量低于此值记 separation_robust=FALSE（23.8）
+  small_sample_design:
+    max_samples_per_group: <TBD, 用户确认>               # 小样本设计判定（23.5）
+    omit_cell_level_pvalue: true                        # true=不输出细胞级 p 值（23.5）
+
+ambient:                                 # 需求24：环境 RNA 诊断与可选校正（阶段13）
+  lineage_markers:                       # 谱系 -> 该谱系本不应表达的基因（24.1）
+    # myeloid: ["EPCAM", "KRT8"]
+    # epithelial: ["PTPRC", "LYZ"]
+  warn_threshold: <TBD, 用户确认，如 0.1>              # 检出比例告警阈值（24.2）
+  background_max_detection: <TBD, 用户确认，如 0.05>   # 本底对照群判定：检出低于此值视为不表达（24.3）
+  correction:
+    enabled: false                        # 默认关闭（24.4）；开启需 R 包 celda(decontX)
+
+diagnostics:                             # 需求25：样本代表性告警（阶段14）
+  single_sample_dominance_threshold: <TBD, 用户确认，设计默认 0.70>
+
+module_scores:                           # 需求29：模块特征评分（阶段16）；集合名->基因列表，
+  # proinflammatory: ["NOS2", "IL1B", "TNF"]   # 或指向 marker_panels 中一行；评分仅输出连续量
+  {}
 
 paths:
   figures_dir: "<TBD, 用户确认，如 {remote_work_dir}/figures>"

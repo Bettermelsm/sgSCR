@@ -154,7 +154,18 @@ if (length(cc_objs) >= 2) {
   saveRDS(merged, file.path(cc_dir, "cellchat_merged.rds"))
   # netVisual_heatmap 返回 ComplexHeatmap 对象（非 ggplot），用其原生设备落盘
   hm <- CellChat::netVisual_heatmap(merged, comparison = c(1, 2))
-  figs <- sgs_save_heatmap(cfg, "P7", "PanelA", "CellChat_diff_interaction", hm, STEP)
+  # 阶段15：源数据 = 差异交互长表（merged@net$prob 组间差）；组级图附组内细胞数
+  hm_src <- do.call(rbind, lapply(seq_along(groups), function(gi) {
+    pr <- cc_objs[[gi]]@net$prob
+    df <- as.data.frame(as.table(pr))
+    data.frame(source = df$Var1, target = df$Var2, group = groups[gi],
+               prob = as.numeric(df$Freq),
+               sample_id = sprintf("(group_%s)", groups[gi]),
+               n_cells = as.integer(ncol(cc_objs[[gi]]@data)),
+               stringsAsFactors = FALSE)
+  }))
+  figres <- sgs_save_heatmap(cfg, "P7", "PanelA", "CellChat_diff_interaction", hm, hm_src, STEP)
+  figs <- unlist(figres$files)
   pathways <- cfg$cellchat$pathways_of_interest
   log_info(STEP, sprintf("关注通路: %s（差异分析图见 P7 产物）",
                          paste(pathways, collapse = ", ")))

@@ -98,7 +98,14 @@ for (comp in comps) {
     plt <- ggplot(df, aes(x = .data[[emb_cols[1]]], y = .data[[emb_cols[2]]], color = pseudotime)) +
       geom_point(size = 0.7) + scale_color_viridis_c() + theme_classic() +
       ggtitle(sprintf("%s pseudotime (n=%d, %s)", comp, ncol(obj), role_of[[comp]]))
-    figs <- sgs_save_plot(cfg, "P8", "PanelA", paste0(comp, "_trajectory"), plt, STEP)
+    # 阶段15：源数据 = 逐细胞 UMAP + 拟时序 + 样本 + 样本细胞数
+    pt_src <- data.frame(
+      sample_id = as.character(obj$sample_id),
+      umap_1 = df[[emb_cols[1]]], umap_2 = df[[emb_cols[2]]],
+      pseudotime = df$pseudotime, stringsAsFactors = FALSE)
+    pt_src$n_cells <- as.integer(table(pt_src$sample_id)[pt_src$sample_id])
+    figres <- sgs_save_plot(cfg, "P8", "PanelA", paste0(comp, "_trajectory"), plt, pt_src, STEP)
+    figs <- unlist(figres$files)
 
     gate <- sgs_qc_gate(
       auto_pass = sum(!is.na(obj$pseudotime)) > 0 &&

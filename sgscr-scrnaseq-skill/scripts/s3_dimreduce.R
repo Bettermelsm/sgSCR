@@ -65,10 +65,20 @@ plt_elbow <- ggplot2::ggplot(elbow_df, ggplot2::aes(PC, var_exp)) +
                     hjust = 0, color = "red") +
   ggplot2::labs(title = "Elbow plot with selected PC number",
                 x = "PC", y = "% variance explained (bars) / cumulative (line)")
-figs <- sgs_save_plot(cfg, "P3.2", "PanelA", "ElbowPlot_annotated", plt_elbow, STEP)
+# 阶段15：源数据（PC 方差表；非样本级图附全量细胞数与全样本标识，逐字面满足契约）
+elbow_src <- elbow_df
+elbow_src$sample_id <- "(all)"
+elbow_src$n_cells <- ncol(obj)
+figres <- sgs_save_plot(cfg, "P3.2", "PanelA", "ElbowPlot_annotated", plt_elbow, elbow_src, STEP)
+figs <- unlist(figres$files)
 
 plt_pca <- Seurat::DimPlot(obj, reduction = "pca", group.by = "sample_id")
-figs <- c(figs, sgs_save_plot(cfg, "P3.1", "PanelA", "PCA_by_sample", plt_pca, STEP))
+pca_emb <- Seurat::Embeddings(obj, reduction = "pca")[, 1:2, drop = FALSE]
+pca_src <- data.frame(sample_id = as.character(obj$sample_id),
+                      PC1 = pca_emb[, 1], PC2 = pca_emb[, 2], stringsAsFactors = FALSE)
+pca_src$n_cells <- as.integer(table(pca_src$sample_id)[pca_src$sample_id])
+figres2 <- sgs_save_plot(cfg, "P3.1", "PanelA", "PCA_by_sample", plt_pca, pca_src, STEP)
+figs <- c(figs, unlist(figres2$files))
 
 # ---- Quality_Gate ----
 pcs_ok <- !is.na(sel$pc_use) && sel$pc_use >= 2 && sel$pc_use <= cfg$pca$npcs_compute

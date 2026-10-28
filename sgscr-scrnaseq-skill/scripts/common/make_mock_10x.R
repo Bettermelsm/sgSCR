@@ -29,7 +29,7 @@ if (length(mg_genes) > 0) {
   genes <- setdiff(genes, sprintf("HK%i", 1:50))
   genes <- unique(c(genes, sample(mg_genes)))
 }
-# 可选：强制注入 config target_genes（默认 SLC26A3/GUCA2A），保证 S10 正向路径可冒烟
+# 可选：通过 --target-genes 注入 config 的目标基因（基因清单来自配置，不在本脚本内置），保证 S10 正向路径可冒烟
 tg_path <- geta("target-genes", "")
 if (nzchar(tg_path) && file.exists(tg_path)) {
   genes <- unique(c(genes, readLines(tg_path)))

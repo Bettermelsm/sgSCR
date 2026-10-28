@@ -96,11 +96,13 @@ sgs_manifest_steps_overview <- function(manifest_path) {
 }
 
 sgs_manifest_add_figure_panel <- function(manifest_path, fig_id, panel_id,
-                                          file, science_question = NULL) {
+                                          file, science_question = NULL,
+                                          source_csv = NULL, font_family = NULL) {
   m <- .sgs_manifest_read(manifest_path)
   m$figures_panel_map <- append(m$figures_panel_map, list(list(
     fig_id = fig_id, panel_id = panel_id, file = file,
-    science_question = science_question)))
+    science_question = science_question,
+    source_csv = source_csv, font_family = font_family)))   # 阶段15：需求 18.7/18.5
   .sgs_manifest_write(manifest_path, m)
   invisible(TRUE)
 }

@@ -2,6 +2,44 @@
 
 遵循语义化版本 V{Major}.{Minor}.{Patch}（-Alpha/Beta/RC 后缀），推送前与用户确认版本号。
 
+## [0.3.0-beta] - 2026-10-28
+
+### Added（阶段 12–17：样本水平统计、环境 RNA、代表性告警、模块评分、图源数据契约、文档通用化）
+- **S10b 样本水平分离统计**（`scripts/s10b_sample_stats.R` + `scripts/common/sample_stats_utils.R`）：
+  组均值只由样本均值构成（M_g = mean of m_s，细胞数不进权重）；完全分离判据 = min(一组) > max(另一组)，
+  margin 取成立方向 min−max（未分离 ≤0 照样输出）；margin_ratio = margin/Δ（Δ=0 → NA）；
+  margin < `stats.min_separation_margin` → `separation_robust=FALSE`；LOO 数据集（ALL + LOO_<sample_id>）；
+  低细胞数（< `stats.min_cells_per_sample`）样本明细标 `low_n_flag`、汇总排除、`n_samples_used` 按组；
+  不设细胞级 p 值，Manifest 记录最小可达双侧 p = 2/choose(n0+n1, n0)；
+  输出列契约（metric/cell_group/dataset/mean_group0/1/delta/min/max/separation/margin/margin_ratio/robust/n_used/value_<sample_id>）
+- **S10 环境 RNA 诊断**（需求 24）：`ambient.lineage_markers` 谱系→本不应表达基因，按 (谱系,基因,样本)
+  输出 `diagnostics/ambient_rna.csv` 检出比例；超 `ambient.warn_threshold` 告警入 Manifest `warnings.ambient_rna`
+- **S2b 环境 RNA 校正**（`scripts/s2b_ambient_correct.R`，需求 24.4）：**默认关闭**照常跳过；
+  开启而后端（celda/decontX）缺失必须**显式失败并报告缺失包名**，不静默、不伪造校正；
+  开启时产出 `rds/s2b_obj_corrected.rds`（assay "decontX"，不覆盖 s2 产物）
+- **S10 样本代表性告警**（需求 25）：(组,细胞群) 最大单样本占比 > `diagnostics.single_sample_dominance_threshold`
+  （默认 0.70）→ 告警 + `single_sample_driven=TRUE` + 主导样本 ID；经 `diagnostics/sample_representation.csv`
+  传递到 S10b 汇总表与 S11 图注
+- **S10 模块特征评分**（需求 29）：`module_scores` 配置集合名→基因列表；AddModuleScore 缺失基因
+  只标记不静默丢弃（`<set>_genes_used.csv`）；输出 by_cell_group/by_sample/by_cluster_sample；
+  只写 `<set>_score1` 数值列，静态检查禁止离散标签回写
+- **出图源数据契约**（需求 18.5–18.7）：`sgs_save_plot`/`sgs_save_heatmap` 统一套用
+  `figure.font_family`/`figure.base_size`（字体来自 Config 非脚本字面量）；强制 `source_df`
+  （含样本标识列与细胞数列，缺一即错误）；同名 `.source.csv` 同目录落盘；源数据路径+字体记入
+  Manifest `figures_panel_map`；s2/s3/s4/s6/s7/s8/s10 全部调用点改造，无"只出图不出源数据"遗留
+- S11 质量门控纳入 s10b；`figures_panel_map` 记录 source_csv 与 font_family；图注注入 `single_sample_driven` 注记
+- 测试：属性测试 ×5（23.1 组均值/23.3-23.9 分离判据与实测量级/25.1-25.2 代表性/29.3 模块缺失标记/16 出图契约）
+  + 单元测试 ×2（23.2/23.5/23.6 LOO 与最小可达 p/24.1-24.4 与 18.5-18.7），全部 Rscript 直跑通过
+- 文档通用化：SKILL.md 移除案例细节改以配置契约描述；案例迁入 `examples/case-UC-10X-2025.md`
+  （7 样本纳入决策、57,230 细胞、决议参数、科学结论摘要）
+
+### Fixed
+- s10 环境 RNA 块引用不存在变量 `clusters` → `cluster`（mock 全链暴露）
+- 测试侧三处判据错误（分离方向取错分支、检出比例计数错、hedgehog 双参数生成器 API 误用）
+
+### Known issues
+- s11_finalize 对"复用上游产物的续跑 run"按 11 步完整计数会 FAIL（修复方案待定，同 0.2.0）
+
 ## [0.2.0-beta] - 2026-10-20
 
 ### Added

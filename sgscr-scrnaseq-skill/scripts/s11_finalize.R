@@ -37,9 +37,23 @@ if (!dir.exists(fig_dir)) problems <- c(problems, "figures 目录")
 if (length(problems) > 0) sgs_preflight(STEP, problems, character(0))
 
 ov <- sgs_manifest_steps_overview(manifest_path)
-ov$key <- sub("^(s[0-9]+).*", "\\1", ov$step_id)   # s10/s11 两位编号不能只取前2字符
-need <- sprintf("s%d", 0:10)
+ov$key <- sub("^(s[0-9]+[a-z]?).*", "\\1", ov$step_id)   # s10/s10b/s11 两位编号不能只取前2字符
+need <- c(sprintf("s%d", 0:10), "s10b")   # 阶段12：s10b 接入依赖链 s10 -> s10b -> s11
 missing_steps <- setdiff(need, ov$key)
+
+# ---- 阶段14（需求 25.2）：样本代表性告警进图注 ----
+repr_note <- NA_character_
+repr_file <- file.path(dirname(manifest_path), "diagnostics", "sample_representation.csv")
+if (file.exists(repr_file)) {
+  repr <- read.csv(repr_file, check.names = FALSE)
+  drv <- repr[repr$single_sample_driven %in% TRUE, , drop = FALSE]
+  if (nrow(drv)) {
+    repr_note <- paste(sprintf("cell_group %s (%s) 由单一样本 %s 主导 (%.0f%%)",
+                               drv$cell_group, drv$group, drv$dominant_sample,
+                               100 * drv$max_fraction), collapse = "; ")
+    log_warn(STEP, paste("图注代表性告警:", repr_note))
+  }
+}
 
 # ---- 各 Step 声明的 figure 产物存在性（按 step 逐一拆分，保留归属） ----
 fig_rows <- do.call(rbind, lapply(seq_len(nrow(ov)), function(i) {
@@ -64,16 +78,20 @@ idx <- do.call(rbind, lapply(seq_len(nrow(fig_rows)), function(i) {
   if (exists && !is.na(fp$fig_id)) {
     sgs_manifest_add_figure_panel(manifest_path, fig_id = fp$fig_id,
       panel_id = fp$panel_id, file = f,
-      science_question = if (grepl("^P10", fp$fig_id)) sq_text else NULL)
+      science_question = if (grepl("^P10", fp$fig_id)) sq_text else NULL,
+      source_csv = if (grepl("\\.(pdf|tiff|png)$", f))
+        sub("\\.[a-z]+$", ".source.csv", f) else NULL,
+      font_family = if (!is.null(cfg$figure$font_family)) cfg$figure$font_family else "sans")
   }
   data.frame(file = basename(f), step_id = fig_rows$step_id[i],
              fig_id = fp$fig_id, panel_id = fp$panel_id, exists = exists,
              science_question = if (identical(fp$fig_id, "P10")) sq_text else NA_character_,
+             sample_representation_note = repr_note,
              stringsAsFactors = FALSE)
 }))
 if (is.null(idx)) idx <- data.frame(file = character(0), step_id = character(0),
   fig_id = character(0), panel_id = character(0), exists = logical(0),
-  science_question = character(0))
+  science_question = character(0), sample_representation_note = character(0))
 write.csv(idx, file.path(fig_dir, "figure_index.csv"), row.names = FALSE)
 
 # ---- 最终汇总（追加 s11_finalize 条目，P14 只追加） ----
@@ -82,8 +100,8 @@ auto_pass <- length(missing_steps) == 0 && length(missing_figs) == 0 &&
   nrow(fig_rows) > 0
 gate <- sgs_qc_gate(
   auto_pass = auto_pass,
-  detail = sprintf("steps %d/11 (缺: %s); figures %d 张已登记 (缺: %s); gate: %s",
-                   length(intersect(need, ov$key)),
+  detail = sprintf("steps %d/%d (缺: %s); figures %d 张已登记 (缺: %s); gate: %s",
+                   length(intersect(need, ov$key)), length(need),
                    if (length(missing_steps)) paste(missing_steps, collapse = ",") else "无",
                    sum(idx$exists & !is.na(idx$fig_id)),
                    if (length(missing_figs)) paste(basename(missing_figs), collapse = ",") else "无",
