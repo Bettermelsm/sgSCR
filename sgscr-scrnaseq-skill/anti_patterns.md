@@ -8,3 +8,4 @@
 4. **改写 Manifest 历史 Step 条目**（2026-10-02）——只追加；发现前一步写错了，追加更正条目而不是原地改。
 5. **日志用手写 cat()/print()**（2026-10-02）——统一 log_utils.R，否则日志无法按约定正则解析（P17）。
 6. **人工确认点被跳过直接续跑**（2026-10-02）——QC 图/clustree/映射表三处 NEEDS_HUMAN_REVIEW 必须等用户确认。
+7. **改动横切约定时只改单点**（2026-10-28，Kiro 0052）——一个约定（如 run_root 路径推导、步骤注册、gate 步骤集、freshness 检查）往往有多个消费方（脚本、resume_utils、env_resolver、run_step.sh、s11 门控、测试）。改动前必须 grep 枚举全部消费方逐一同步；P12-c 中 s6b 注册漏 3 处、s11 repr 路径沿用了过时的 run_root 推导，均属此类。

@@ -20,7 +20,7 @@ test_that("23.3/23.4/23.7/23.9: 分离/未分离构造数据判据与余量正�
   expect_true(st$separation)
   expect_equal(st$separation_margin, 1.5 - 0.3)   # 分离方向为 case 低：min(ctrl) - max(case)
   expect_equal(st$delta, mean(c(0.3, 0.1, 0.2)) - mean(c(2.0, 1.5, 1.8)))
-  expect_equal(st$margin_ratio, st$separation_margin / st$delta)
+  expect_equal(st$margin_ratio, st$separation_margin / abs(st$delta))   # P12-d 必修1：恒为正
   expect_equal(st$min_group0, 1.5); expect_equal(st$max_group0, 2.0)
   expect_equal(st$min_group1, 0.1); expect_equal(st$max_group1, 0.3)
   expect_true(st$separation_robust)
@@ -31,6 +31,11 @@ test_that("23.3/23.4/23.7/23.9: 分离/未分离构造数据判据与余量正�
   expect_false(st2$separation)
   expect_lte(st2$separation_margin, 0)     # 未分离照样输出 margin（<=0）
   expect_false(st2$separation_robust)
+  # P12-d 必修2：未分离取距分离更近的方向（两方向 gap 为 -0.3 与 -0.7，应取 -0.3）
+  expect_equal(st2$separation_margin, -0.3)
+  # P12-d 必修3：min_separation_margin 无默认值，缺省调用必须报错（防 robust 判据失效）。
+  # 注：未分离时 robust 判据被 && 短路，缺省参数不求值；须用已分离数据才能触发缺参错误
+  expect_error(sgs_separation_stats(m_s, g, "ctrl", "case"), "min_separation_margin")
 
   # 构造3：反向分离（case 高于 control）：min(ctrl) 0.2 < max(case) 0.9 → 走 sep_high，margin = 0.2 - 0.9
   m_s3 <- c(S1 = 0.1, S2 = 0.2, S3 = 0.15, S4 = 1.0, S5 = 1.2, S6 = 0.9)

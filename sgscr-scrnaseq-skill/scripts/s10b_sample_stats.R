@@ -48,6 +48,8 @@ if (file.exists(stale_out)) sgs_check_freshness(stale_out, in_rds)
 min_margin <- if (!is.null(cfg$stats$min_separation_margin)) cfg$stats$min_separation_margin else 0.01
 min_cells  <- if (!is.null(cfg$stats$min_cells_per_sample)) cfg$stats$min_cells_per_sample else 10
 bg_max_det <- if (!is.null(cfg$ambient$background_max_detection)) cfg$ambient$background_max_detection else 0.05
+# 谱系本底口径（P12-d 科学判定项，24.3）：目标基因表达谱系之外的全部细胞作为本底对照群
+bg_excl_cfg <- as.character(unlist(cfg$ambient$background_exclude_lineages))
 
 grp_cfg <- if (!is.null(cfg$design$groups)) as.character(unlist(cfg$design$groups)) else c("ctrl", "case")
 g0 <- grp_cfg[1]; g1 <- if (length(grp_cfg) > 1) grp_cfg[2] else grp_cfg[1]
@@ -84,20 +86,41 @@ if (!is.null(expr_m)) {
   for (gcol in colnames(expr_m)) {
     for (cl in sort(unique(clusters))) {
       i <- clusters == cl
+      tb_i <- table(samples[i])
       det_list[[length(det_list) + 1]] <- data.frame(
         metric = gcol, cell_group = cl,
         sample_id = samples[i], group = groups[i], value = expr_m[i, gcol],
+        n_cells = as.integer(tb_i[samples[i]]),
         stringsAsFactors = FALSE)
     }
-    # 24.3 本底对照群：该基因按主群检出判定为不表达的细胞群合并
+    # 24.3 本底对照群（两种口径并列输出，P12-d 科学判定项）：
+    # (a) auto："nonexpressing_background"——按检出比例 ≤ background_max_detection 自动选取。
+    #     局限（Kiro 0053 指出）：会把受环境 RNA 污染较重的群排除在本底之外，本底差值被低估，
+    #     上皮特异性显得偏强——偏差方向有利于预期结论，论文报告不得单独依赖此口径。
+    # (b) lineage："lineage_background"——按谱系定义（ambient.background_exclude_lineages
+    #     列出的目标基因表达谱系之外的全部细胞），与论文"全部非上皮细胞"口径一致。
     det_pct <- tapply(expr_m[, gcol] > 0, clusters, mean)
     bg_cl <- sgs_background_clusters(det_pct, max_detection = bg_max_det)
     if (length(bg_cl)) {
       i <- clusters %in% bg_cl
+      tb_i <- table(samples[i])
       det_list[[length(det_list) + 1]] <- data.frame(
         metric = gcol, cell_group = "nonexpressing_background",
         sample_id = samples[i], group = groups[i], value = expr_m[i, gcol],
+        n_cells = as.integer(tb_i[samples[i]]),
         stringsAsFactors = FALSE)
+    }
+    bg_excl <- bg_excl_cfg
+    if (length(bg_excl)) {
+      i <- !(clusters %in% bg_excl)
+      if (any(i)) {
+        tb_i <- table(samples[i])
+        det_list[[length(det_list) + 1]] <- data.frame(
+          metric = gcol, cell_group = "lineage_background",
+          sample_id = samples[i], group = groups[i], value = expr_m[i, gcol],
+          n_cells = as.integer(tb_i[samples[i]]),
+          stringsAsFactors = FALSE)
+      }
     }
   }
 }
@@ -106,17 +129,18 @@ if (nrow(mod)) {
   det_list[[length(det_list) + 1]] <- do.call(rbind, lapply(mod_sets, function(ms) {
     data.frame(metric = ms, cell_group = mod$cell_group,
                sample_id = mod$sample_id, group = mod$group, value = mod[[ms]],
+               n_cells = mod$n_cells,
                stringsAsFactors = FALSE)
   }))
 }
 detail <- do.call(rbind, det_list)
 if (is.null(detail) || !nrow(detail)) stop("无可用指标（target genes 与 module scores 均为空）", call. = FALSE)
-detail$n_cells <- 1L  # 占位，下面按 (cell_group, sample) 重算真实细胞数
 
-# ---- 低细胞数标记（23.6）：按 (cell_group, sample) 细胞数 ----
-cell_n <- as.data.frame(table(cell_group = clusters, sample_id = samples), responseName = "n")
-detail <- merge(detail, cell_n, by = c("cell_group", "sample_id"), all.x = TRUE)
-detail$n_cells[is.na(detail$n_cells)] <- 0L
+# ---- 低细胞数标记（23.6）：按 (cell_group, sample) 实际细胞数 ----
+# n_cells 在行构造时随细胞集合一并算好（本底口径的伪群不在 clusters 表里，
+# 不能事后用 table(clusters, samples) 回算——mock 全链暴露），
+# 只有 module score 行依赖 by_cluster_sample.csv 自带的 n_cells 列
+stopifnot(!any(is.na(detail$n_cells)), all(detail$n_cells >= 0))
 detail$low_n_flag <- detail$n_cells < min_cells
 
 write.csv(detail[, c("metric", "cell_group", "sample_id", "group", "n_cells", "value", "low_n_flag")],
@@ -208,7 +232,8 @@ sgs_manifest_append_step(cfg$paths$manifest_path, step_id = STEP, env_name = cfg
     min_attainable_two_sided_p = p_min,
     n_samples_used = list(group0 = n0, group1 = n1),
     low_n_samples = as.list(low_n_list),
-    background_max_detection = bg_max_det),
+    background_max_detection = bg_max_det,
+    background_exclude_lineages = as.list(bg_excl_cfg)),
   outputs = as.list(c(file.path(out_dir, "sample_level_summary.csv"),
                       file.path(out_dir, "sensitivity_leave_one_out.csv"),
                       file.path(out_dir, "per_sample_detail.csv"),

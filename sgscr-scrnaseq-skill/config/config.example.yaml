@@ -127,6 +127,11 @@ ambient:                                 # 需求24：环境 RNA 诊断与可选
     # epithelial: ["PTPRC", "LYZ"]
   warn_threshold: <TBD, 用户确认，如 0.1>              # 检出比例告警阈值（24.2）
   background_max_detection: <TBD, 用户确认，如 0.05>   # 本底对照群判定：检出低于此值视为不表达（24.3）
+  background_exclude_lineages: <TBD, 如 ["epithelial"]>  # 谱系本底口径（24.3/P12-d）：这些谱系之外的细胞合并为
+                                                         # lineage_background。auto 口径（nonexpressing_background）
+                                                         # 会把环境 RNA 污染重的群排除出本底，本底差值被低估、
+                                                         # 目标谱系特异性偏强（偏差有利于预期结论）——论文报告须
+                                                         # 以 lineage 口径为主，auto 口径仅作敏感性对照。
   correction:
     enabled: false                        # 默认关闭（24.4）；开启需 R 包 celda(decontX)
 

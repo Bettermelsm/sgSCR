@@ -39,6 +39,22 @@
 - s10 环境 RNA 块引用不存在变量 `clusters` → `cluster`（mock 全链暴露）
 - 测试侧三处判据错误（分离方向取错分支、检出比例计数错、hedgehog 双参数生成器 API 误用）
 
+### Fixed（P12-d，Kiro 0053 PR per-file review）
+- `margin_ratio = margin/|Δ|`（原 margin/Δ 在 case 低于 control 时给出误导性负比例）
+- 未分离时 margin 取两个方向 gap 中更接近 0 的（语义 = "距分离还差多少"），不再依赖分支顺序
+- `sgs_separation_stats` 的 `min_separation_margin` **取消默认值**——缺省 0 会让任何已分离指标恒判 robust
+- `sgs_sample_level_columns` 列契约与实际表头对齐（base + value_<sid> + low_n_<sid> + single_sample_driven）
+- **本底对照群双口径并列输出**（24.3 科学判定项）：auto `nonexpressing_background`（检出≤background_max_detection，
+  局限：会把环境 RNA 污染重的群排除出本底→本底差值被低估→目标谱系特异性偏强，偏差方向有利于预期结论）
+  + 谱系 `lineage_background`（`ambient.background_exclude_lineages` 之外的细胞），口径选择记入 Manifest
+  `resolved_params.background_exclude_lineages`；论文报告以谱系口径为主（最终口径待用户/Kiro 确认）
+- s10b `n_cells` 改为行构造时随细胞集合一并计算（mock 重跑暴露：本底口径伪群不在
+  `table(clusters, samples)` 中，事后合并回算得 0 → 全行被 low_n_flag 排除 → 汇总全 NA）
+
+### Note（P12-c 验证路径披露，Kiro 0052 要求）
+- s10 主导告警端到端验证经**调低阈值**（single_sample_dominance_threshold 0.70→0.25）的 mock 场景完成，
+  未遇天然超阈数据；默认阈值 0.70 下该路径逻辑相同（同一 `sgs_single_sample_dominance` 判据），仅触发条件不同。
+
 ### Known issues
 - s11_finalize 对"复用上游产物的续跑 run"按 11 步完整计数会 FAIL（修复方案待定，同 0.2.0）
 

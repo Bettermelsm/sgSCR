@@ -26,7 +26,9 @@ sgs_group_mean <- function(m_s, grp_of_sample, g) {
 # ---- 23.3/23.4/23.7/23.8/23.9：分离判据 + 余量（对一组每样本均值 m_s 计算） ----
 # grp_of_sample: 命名向量 sample_id -> group；g0=对照（design.groups 首项），g1=case
 sgs_separation_stats <- function(m_s, grp_of_sample, g0, g1,
-                                 min_separation_margin = 0) {
+                                 min_separation_margin) {
+  # min_separation_margin 无默认值（P12-d 必修3）：稳健性判据必须显式给阈值，
+  # 缺省 0 会让任何已分离指标恒判 robust
   i0 <- names(m_s)[grp_of_sample[names(m_s)] == g0]
   i1 <- names(m_s)[grp_of_sample[names(m_s)] == g1]
   v0 <- unname(m_s[i0]); v1 <- unname(m_s[i1])
@@ -44,8 +46,11 @@ sgs_separation_stats <- function(m_s, grp_of_sample, g0, g1,
   sep_low  <- min1 > max0    # case 整体低于 control
   sep_high <- min0 > max1    # case 整体高于 control
   separation <- sep_low || sep_high
-  margin <- if (sep_low) min1 - max0 else if (sep_high) min0 - max1 else min(min1 - max0, min0 - max1)
-  margin_ratio <- if (isTRUE(delta != 0)) margin / delta else NA_real_
+  # 未分离时两项皆 ≤0：取更接近 0 的（P12-d 必修2）——margin 语义是"距分离还差多少"
+  margin <- if (sep_low) min1 - max0 else if (sep_high) min0 - max1 else max(min1 - max0, min0 - max1)
+  # ratio 用 |delta|（P12-d 必修1）：case 低于 control 时 delta 为负，
+  # margin/abs(delta) 保持正值，避免表中出现误导性负比例
+  margin_ratio <- if (isTRUE(delta != 0)) margin / abs(delta) else NA_real_
   separation_robust <- isTRUE(separation) && (margin >= min_separation_margin)
   list(mean_group0 = M0, mean_group1 = M1, delta = delta,
        min_group0 = min0, max_group0 = max0, min_group1 = min1, max_group1 = max1,
@@ -105,11 +110,14 @@ sgs_background_clusters <- function(detection_by_cluster, max_detection = 0.05,
 }
 
 # ---- s10b 输出表列契约（design.md「输出表列契约」，顺序即列顺序） ----
-sgs_sample_level_columns <- function(sample_ids, value_names = NULL) {
+# ---- 23.5/23.6/25.2：s10b 输出表列契约（与实际表头一一对应，P12-d 必修4） ----
+sgs_sample_level_columns <- function(sample_ids) {
   base <- c("metric", "cell_group", "dataset", "mean_group0", "mean_group1", "delta",
             "min_group0", "max_group0", "min_group1", "max_group1",
             "separation", "separation_margin", "margin_ratio", "separation_robust",
             "n_samples_used_group0", "n_samples_used_group1")
-  vals <- if (is.null(value_names)) character(0) else sprintf("value_%s", sample_ids)
-  c(base, vals)
+  c(base,
+    sprintf("value_%s", sample_ids),      # 每样本逐值列（低细胞数样本为 NA）
+    sprintf("low_n_%s", sample_ids),      # 每样本低细胞数标记列
+    "single_sample_driven")               # 代表性告警传递列（25.2）
 }
