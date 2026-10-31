@@ -42,6 +42,8 @@ metadata:
 
 不适用：bulk RNA-seq（走 sgFLW）、空间转录组（暂未覆盖）、SMART-seq2 全长数据（未验证）。
 
+> **输入适配器未实现（requirements 需求 28 / tasks 阶段 18）**：当前**仅支持 10X 原始矩阵目录**（barcodes.tsv.gz / features.tsv.gz / matrix.mtx.gz 三联文件）。h5ad、10X h5、计数矩阵文本、已保存的 Seurat 对象等输入格式**均不支持**；其他项目复用前请先自行转换为 10X 三联目录，勿按 h5ad 可用的预期调用，否则会直接踩空。
+
 ## 核心结论（先看这个）
 
 > **流程 = S0–S11（含可选 S2b、S10b）共十四个独立 Step，每个 Step 输入/输出落盘为文件，Quality_Gate 三态（PASS/FAIL/NEEDS_HUMAN_REVIEW）**。
