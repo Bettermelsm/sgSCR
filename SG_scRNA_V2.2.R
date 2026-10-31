@@ -15,7 +15,7 @@ rm(list = ls()); gc()
 ############################################################
 # E1. BASIC SETTINGS
 ############################################################
-base_dir <- "/mnt/sda1/LSM_scRNAseq/20241118BFlin_UC"
+base_dir <- "<DATA_DIR>"
 setwd(base_dir)
 dir.create("Ana_res3", showWarnings = FALSE)
 outdir <- file.path(base_dir, "Ana_res3")

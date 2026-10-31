@@ -13,7 +13,7 @@ library(celldex)
 
 #1.Data_get
 
-setwd("/mnt/sda1/LSM_scRNAseq/20241118BFlin_UC")
+setwd("<DATA_DIR>")
 #dir.create("Ana_res")
 #pbmc.data <- Read10X(data.dir =DIRNC1,gene.column = 1)
 #pbmc <- CreateSeuratObject(counts = pbmc.data,project = "pbmc3k",min.cells = 3,min.features = 200)
@@ -21,7 +21,7 @@ setwd("/mnt/sda1/LSM_scRNAseq/20241118BFlin_UC")
 
 ##1.1set_dir_path
 sample_folders <- c("NC1", "NC3", "NC4", "UC1", "UC2", "UC3","UC4")
-data_dir <- "/mnt/sda1/LSM_scRNAseq/20241118BFlin_UC/All_filter_data_raw" 
+data_dir <- "<DATA_DIR>/All_filter_data_raw" 
 
 seurat_list <- list()# a_new_list_to_store_Seurat_objects
 
@@ -75,7 +75,7 @@ head(pbmc_flt@meta.data)[,c(2,3,4,5)]
 ##2.2Feature、count、线粒体基因、红细胞基因占比可视化
 ##nCount_RNA就是UMI的读数，nFeature_RNA就是Gene
 
-DIR00 <- c("/mnt/sda1/LSM_scRNAseq/20241118BFlin_UC")
+DIR00 <- c("<DATA_DIR>")
 DIR01 <- paste0(DIR00,"/Ana_res")
 setwd(DIR01)
 png("P2.2QC1.png",width = 2700,height = 1600,res=200)
@@ -377,7 +377,7 @@ png("P5.SingleR2.png",width = 5700,height = 2600,res=300)
 p2+ p1
 dev.off()
 
-write.csv(pred,"/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/singleR_anno.csv")
+write.csv(pred,"<HOME>/Ana_res/singleR_anno.csv")
 
 
 
@@ -395,11 +395,11 @@ fibroblast_subset <- FindVariableFeatures(
 ## 6.3.提取并查看高变基因
 var_genes <- VariableFeatures(fibroblast_subset)
 head(var_genes, 20)  # 查看前20个高变基因
-write.csv(var_genes,"/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/var_genes_fib.csv")
+write.csv(var_genes,"<HOME>/Ana_res/var_genes_fib.csv")
 
 ## 6.4. 可视化高变基因
 ###6.4.1 高变基因识别图
-png("/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/P6.4.1VariableFeaturePlot_fib.png",width = 5700,height = 2600,res=300)
+png("<HOME>/Ana_res/P6.4.1VariableFeaturePlot_fib.png",width = 5700,height = 2600,res=300)
 var_plot <- VariableFeaturePlot(fibroblast_subset)
 LabelPoints(
   plot = var_plot,
@@ -412,7 +412,7 @@ dev.off()
 #### 先进行缩放处理
 fibroblast_subset <- ScaleData(fibroblast_subset, features = var_genes)
 #### 绘制热图
-png("/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/P6.4.2Var_gene_Plot_fib_heatmap.png",width = 5700,height = 2600,res=300)
+png("<HOME>/Ana_res/P6.4.2Var_gene_Plot_fib_heatmap.png",width = 5700,height = 2600,res=300)
 DoHeatmap(
   fibroblast_subset,
   features = head(var_genes, 30),  # 显示前30个高变基因
@@ -450,7 +450,7 @@ go_enrich <- enrichGO(
 )
 
 ##7.4可视化GO结果
-png("/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/P7.4var_gene_fib_GO.png",width = 5700,height = 2600,res=300)
+png("<HOME>/Ana_res/P7.4var_gene_fib_GO.png",width = 5700,height = 2600,res=300)
 dotplot(go_enrich, showCategory = 15) + 
   ggtitle("GO Enrichment of Fibroblast Variable Genes")
 dev.off()
@@ -460,7 +460,7 @@ dev.off()
 top_genes <- head(var_genes, 5)
 
 #7.6 绘制UMAP图
-png("/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/P7.6Var_gene_fib_UMAP.png",width = 5700,height = 2600,res=300)
+png("<HOME>/Ana_res/P7.6Var_gene_fib_UMAP.png",width = 5700,height = 2600,res=300)
 FeaturePlot(
   fibroblast_subset,
   features = top_genes,
@@ -475,7 +475,7 @@ dev.off()
 # 7. 保存结果
 write.csv(
   data.frame(Gene = var_genes),
-  file = "/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/fibroblast_variable_genes.csv",
+  file = "<HOME>/Ana_res/fibroblast_variable_genes.csv",
   row.names = FALSE
 )
 
@@ -495,11 +495,11 @@ mcp_subset <- FindVariableFeatures(
 ## 6.3.提取并查看高变基因
 var_genes_mcp <- VariableFeatures(mcp_subset)
 head(var_genes_mcp, 20)  # 查看前20个高变基因
-write.csv(var_genes_mcp,"/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/var_genes_mcp.csv")
+write.csv(var_genes_mcp,"<HOME>/Ana_res/var_genes_mcp.csv")
 
 ## 6.4. 可视化高变基因
 ###6.4.1 高变基因识别图
-png("/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/P6.4.1-1VariableFeaturePlot_mcp.png",width = 3700,height = 1600,res=300)
+png("<HOME>/Ana_res/P6.4.1-1VariableFeaturePlot_mcp.png",width = 3700,height = 1600,res=300)
 var_plot <- VariableFeaturePlot(mcp_subset)
 LabelPoints(
   plot = var_plot,
@@ -512,7 +512,7 @@ dev.off()
 #### 先进行缩放处理
 mcp_subset <- ScaleData(mcp_subset, features = var_genes)
 #### 绘制热图
-png("/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/P6.4.2-1Var_gene_Plot_mcp_heatmap.png",width = 5700,height = 2600,res=300)
+png("<HOME>/Ana_res/P6.4.2-1Var_gene_Plot_mcp_heatmap.png",width = 5700,height = 2600,res=300)
 DoHeatmap(
   mcp_subset,
   features = head(var_genes_mcp, 30),  # 显示前30个高变基因
@@ -550,7 +550,7 @@ go_enrich_mcp <- enrichGO(
 )
 
 ##7.4可视化GO结果
-png("/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/P7.4-1var_gene_mcp_GO.png",width = 5700,height = 2600,res=300)
+png("<HOME>/Ana_res/P7.4-1var_gene_mcp_GO.png",width = 5700,height = 2600,res=300)
 dotplot(go_enrich_mcp, showCategory = 15) + 
   ggtitle("GO Enrichment of Macrophage Variable Genes")
 dev.off()
@@ -560,7 +560,7 @@ dev.off()
 top_genes_mcp <- head(var_genes_mcp, 5)
 
 #7.6 绘制UMAP图
-png("/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/P7.6-1Var_gene_mcp_UMAP.png",width = 5700,height = 2600,res=300)
+png("<HOME>/Ana_res/P7.6-1Var_gene_mcp_UMAP.png",width = 5700,height = 2600,res=300)
 FeaturePlot(
   mcp_subset,
   features = top_genes_mcp,
@@ -575,7 +575,7 @@ dev.off()
 # 7. 保存结果
 write.csv(
   data.frame(Gene = var_genes_mcp),
-  file = "/home/LSM/LSM_scRNAseq/20241118BFlin_UC/Ana_res/mcp_variable_genes.csv",
+  file = "<HOME>/Ana_res/mcp_variable_genes.csv",
   row.names = FALSE
 )
 
