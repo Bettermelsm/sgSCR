@@ -45,6 +45,8 @@ mk_sub <- function(n_groups, prefix) {
   colnames(e) <- c("UMAP_1", "UMAP_2")
   rownames(e) <- colnames(o)
   o[["umap"]] <- CreateDimReducObject(embeddings = e, key = "UMAP_", assay = "RNA")
+  # 阶段15 源数据契约：s8 源数据含逐细胞 sample_id（真实流程由 s1 写入），mock 同步模拟
+  o$sample_id <- rep(c("S1", "S2"), length.out = ncol(o))
   o
 }
 
