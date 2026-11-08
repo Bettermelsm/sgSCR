@@ -10,7 +10,7 @@ HERE <- dirname(normalizePath(sub("^--file=", "",
   grep("^--file=", commandArgs(trailingOnly = FALSE), value = TRUE)[1])))
 SKILL_ROOT <- normalizePath(file.path(HERE, "..", ".."))
 
-tmp <- file.path(tempdir(), paste0("s2b_skip_", as.integer(Sys.time())))
+tmp <- file.path(normalizePath(tempdir(), winslash = "/"), paste0("s2b_skip_", as.integer(Sys.time())))
 rds_dir <- file.path(tmp, "rds"); man_dir <- file.path(tmp, "manifest")
 fig_dir <- file.path(tmp, "figures")
 for (d in c(rds_dir, man_dir, fig_dir)) dir.create(d, recursive = TRUE)
