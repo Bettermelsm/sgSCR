@@ -2,6 +2,11 @@
 
 遵循语义化版本 V{Major}.{Minor}.{Patch}（-Alpha/Beta/RC 后缀），推送前与用户确认版本号。
 
+## [Unreleased]
+### Fixed
+- `tests/unit/test_s2b_skip_matrix_equal.R`：Windows 下 `tempdir()` 含反斜杠，经 `gsub` 代入 YAML 时被当作转义吞掉（`C:Users...`），
+  导致 "Manifest not found"。改为 `normalizePath(tempdir(), winslash = "/")`。仅测试侧，`s2b` 脚本无改动；
+  Windows（R 4.5.0）下全套 30 个测试脚本通过。标签 v0.3.0-beta 不移动，修复随下一版本发布。
 ## [0.3.0-beta] - 2026-10-28
 
 ### Added（阶段 12–17：样本水平统计、环境 RNA、代表性告警、模块评分、图源数据契约、文档通用化）
